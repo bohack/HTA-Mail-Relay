@@ -1,0 +1,96 @@
+<html>
+<head>
+<title>SMTP Relay Test</title>
+<HTA:APPLICATION 
+     APPLICATIONNAME="SMTP Relay Test"
+     SCROLL="yes"
+     SINGLEINSTANCE="yes"
+>
+</head>
+
+<script language="VBScript">
+
+' Jon Buhagiar
+' 07/22/16
+' SMTP Relay Test Application
+
+Public intLeft,intTop
+
+Sub Window_Onload 
+	vertsz=350 
+	hortsz=850 
+	strComputer = "." 
+	Set objWMIService = GetObject("winmgmts:\\" & strComputer & "\root\cimv2") 
+	Set colItems = objWMIService.ExecQuery("Select * From Win32_DesktopMonitor") 
+	For Each objItem in colItems 
+		intHorizontal = objItem.ScreenWidth 
+		intVertical = objItem.ScreenHeight 
+	Next 
+	intLeft = (intHorizontal - hortsz) / 2 
+	intTop = (intVertical - vertsz) / 2 
+	window.resizeTo hortsz,vertsz 
+	window.moveTo intLeft, intTop	
+End Sub 
+
+Sub SMTPSend
+	If smtpto.value = "" then
+		daSMTPto.InnerHTML = "<font color='red' face='Arial'>Missing SMTP To Field.</font>"
+		Exit Sub
+	Else
+		daSMTPto.InnerHTML = ""
+	End If
+	
+	If smtpserver.value = "" then
+		daSMTPserver.InnerHTML = "<font color='red' face='Arial'>Missing Mail Server Field.</font>"
+		Exit Sub
+	Else
+		daSMTPto.InnerHTML = ""
+	End If
+	
+	Set objSMTP = CreateObject("CDO.Message")
+		objSMTP.From = smtpfrom.value
+		objSMTP.To = smtpto.value
+		If smtpdt.checked then
+			smtpsubject.value = smtpsubject.value & " - " & Date() & "-" & Time()
+		End If
+		objSMTP.Subject = smtpsubject.value
+		objSMTP.Textbody = smtpbody.value
+		objSMTP.Configuration.Fields.Item ("http://schemas.microsoft.com/cdo/configuration/sendusing") = 2
+		objSMTP.Configuration.Fields.Item ("http://schemas.microsoft.com/cdo/configuration/smtpserver") = smtpserver.value 
+		objSMTP.Configuration.Fields.Item ("http://schemas.microsoft.com/cdo/configuration/smtpserverport") = 25
+		objSMTP.Configuration.Fields.Update
+		objSMTP.Send
+	Set objSMTP = Nothing
+	
+	daSMTPto.InnerHTML = ""
+	daSMTPserver.InnerHTML = ""
+End Sub
+</script>
+
+<body bgcolor="#e8e8e8">
+  <table>
+    <tr>
+       <td><label for="smtpfrom">From</label></td>
+       <td><input name="smtpfrom" type="text" id="smtpfrom" value="test@test.com" size="40" /></td>
+    </tr>
+    <tr>
+       <td><label for="smtpto">To</label></td>
+       <td><input name="smtpto" type="text" id="smtpto" size="40" /><span id = "daSMTPto"></span></td>
+    </tr>
+    <tr>
+       <td><label for="smtpsubject">Subject</label></td>
+       <td><input name="smtpsubject" type="text" id="smtpsubject" value="Test Message" size="80" /><input type="checkbox" name="smtpdt" value="smtpdt">Include Date Time</td>
+    </tr>
+    <tr>
+       <td><label for="smtpbody">Email Body</label></td>
+       <td><textarea name="smtpbody" id="smtpbody" cols="80" rows="5">This is a test message.</textarea></td>
+    <tr>
+       <td><label for="smtpserver">Relay Server</label></td>
+       <td><input type="text" name="smtpserver" id="smtpserver" /><span id = "daSMTPserver"></span></td>
+    </tr>
+    <tr>
+       <td><input type="button" value="Send Email" name="run_button" onClick="SMTPSend"></td>
+    </tr>
+  </table> 
+</body>
+</html>
